@@ -1,0 +1,18 @@
+name: DeployWokrflow
+
+on: push
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: sshConnection
+              run: |
+                mkdir -p ~/.ssh
+                echo: "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/meinPrivateKey
+                chmod 400 ~/.ssh/meinPrivateKey
+                ssh-keyscan -H >> "${{ secrets.EC2_IP }}" ~/.ssh/known_hosts
+            
+            - name: SSH Connection
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} 'echo "Hello World!"'
