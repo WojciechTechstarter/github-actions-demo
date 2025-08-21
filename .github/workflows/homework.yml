@@ -1,0 +1,40 @@
+name: DeployWorkflow
+
+on: push
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: sshConnection
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/meinPrivateKey
+                chmod 400 ~/.ssh/meinPrivateKey
+                ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+            
+            - name: testConnection
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} 'echo "Hello World!"'
+
+            # === TASK 1: Copy file ===
+            - name: createFolder
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} "mkdir -p ~/meinOrdner"
+
+            - name: copyFile
+              run: |
+                scp -i ~/.ssh/meinPrivateKey meinOrdner/info.txt ubuntu@${{ secrets.EC2_IP }}:~/meinOrdner/info.txt
+
+            - name: verifyFile
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} "ls -l ~/meinOrdner && head -n 1 ~/meinOrdner/info.txt"
+
+            # === TASK 2: Cowsay ===
+            - name: installCowsay
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} "sudo apt update -y && sudo apt install -y cowsay"
+
+            - name: runCowsay
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ secrets.EC2_IP }} '/usr/games/cowsay "Hallo aus den GitHub Actions"'
